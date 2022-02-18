@@ -3,19 +3,22 @@ use std::io::{Read, Write};
 use std::fs;
 use std::thread;
 use std::time::Duration;
+use mini_server::ThreadPool;
 
+// https://www.bookstack.cn/read/trpl-zh-cn-1.41/ch20-00-final-project-a-web-server.md
 fn main() {
     println!("Hello, world!");
     let listener = TcpListener::bind("127.0.0.1:18080").unwrap();
-    for stream in
-    listener.incoming()
+    for stream in listener.incoming().take(2)
     {
         let stream = stream.unwrap();
         println!("conn is incoming!");
-        thread::spawn(|| {
-            handle_stream(stream);
+        let pool = ThreadPool::new(5);
+        pool.execute(|| {
+            handle_stream(stream)
         })
     }
+    println!("shutting down.");
 }
 
 fn handler_conn(mut stream: TcpStream) {
@@ -73,3 +76,5 @@ fn handle_stream(mut stream: TcpStream) {
     stream.write(resp.as_bytes()).unwrap();
     stream.flush().unwrap();
 }
+
+
